@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+/* Bin Buddies theme (Concept 3): soft periwinkle ground, deep indigo ink, chunky "pressable" shadows. */
+@theme {
+  --font-sans: var(--font-fredoka), ui-rounded, system-ui, sans-serif;
+
+  --color-ground: #eef1ff;
+  --color-ink: #1e1b4b;
+  --color-muted: #4f4a7a;
+  --color-line: #d9defa;
+  --color-track: #e4e7fb;
+  --color-accent: #6d4aff;
+  --color-accent-dark: #2e1a99;
+  --color-accent-soft: #eeeaff;
+
+  --color-wet: #22b573;
+  --color-wet-dark: #17985f;
+  --color-wet-soft: #ddf7ea;
+  --color-dry: #3b82f6;
+  --color-dry-dark: #2563eb;
+  --color-dry-soft: #eef4ff;
+  --color-hazardous: #ff7a1a;
+  --color-hazardous-dark: #e0600a;
+  --color-hazardous-soft: #fff1e6;
+
+  --color-star: #ffb020;
+  --color-flame-soft: #ffe7d4;
+  --color-flame: #c24e00;
+
+  --shadow-chunky: 0 6px 0 var(--color-line);
+  --shadow-chunky-sm: 0 4px 0 var(--color-line);
+  --shadow-press: 0 7px 0 var(--color-accent-dark);
+
+  --animate-pop: pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  --animate-shake: shake 0.4s ease-in-out both;
+  --animate-fade-up: fade-up 0.5s ease-out both;
+  --animate-float-up: float-up 0.8s ease-out both;
+  --animate-flash: flash 0.35s ease-out both;
+  --animate-xp-fill: xp-fill 0.9s ease-out both;
+  --animate-bounce-soft: bounce-soft 0.5s ease-out both;
+  --animate-wiggle: wiggle 2.4s ease-in-out infinite;
+
+  @keyframes pop {
+    0% { transform: scale(0.3); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-8px); }
+    40%, 80% { transform: translateX(8px); }
+  }
+  @keyframes fade-up {
+    0% { transform: translateY(12px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  @keyframes float-up {
+    0% { transform: translateY(0) rotate(-6deg); opacity: 1; }
+    100% { transform: translateY(-56px) rotate(-6deg); opacity: 0; }
+  }
+  @keyframes flash {
+    0% { opacity: 0.35; }
+    100% { opacity: 0; }
+  }
+  @keyframes xp-fill {
+    from { width: var(--xp-from); }
+    to { width: var(--xp-to); }
+  }
+  @keyframes bounce-soft {
+    0% { transform: translateY(0) scale(1); }
+    40% { transform: translateY(-10px) scale(1.06); }
+    100% { transform: translateY(0) scale(1); }
+  }
+  @keyframes wiggle {
+    0%, 90%, 100% { transform: rotate(0deg); }
+    93% { transform: rotate(-4deg); }
+    97% { transform: rotate(4deg); }
+  }
+}
+
+body {
+  @apply bg-ground text-ink antialiased;
+}
+
+/* Reduced motion: animations jump straight to their end state, so shakes and pops become plain colour changes. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
