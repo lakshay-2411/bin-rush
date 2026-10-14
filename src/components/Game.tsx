@@ -33,9 +33,15 @@ const SWIPE_THRESHOLD_PX = 30;
 export function Game({
   set,
   onFinish,
+  onLeave,
 }: {
   set: DailySet;
   onFinish: (answers: Answer[], summary: RoundSummary) => void;
+  /**
+   * Daily rounds only. When set, refreshing or closing mid-round shows the browser's "Leave page?"
+   * prompt, and if the player leaves anyway this receives the answers given so far.
+   */
+  onLeave?: (answers: Answer[]) => void;
 }) {
   const [phase, setPhase] = useState<"countdown" | "playing">("countdown");
   const [count, setCount] = useState(COUNTDOWN_SECONDS);
@@ -152,6 +158,34 @@ export function Game({
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [phase, finish, record, set]);
+
+  // ----- Leaving mid-round (daily round only) -----
+  const onLeaveRef = useRef(onLeave);
+  useEffect(() => {
+    onLeaveRef.current = onLeave;
+  }, [onLeave]);
+  const guardLeave = Boolean(onLeave);
+
+  useEffect(() => {
+    if (!guardLeave) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (doneRef.current) return;
+      e.preventDefault();
+      e.returnValue = ""; // older browsers need this to show the prompt
+    };
+    // pagehide fires only once the page is really going away (not when the prompt is cancelled).
+    const onPageHide = () => {
+      if (doneRef.current) return;
+      doneRef.current = true;
+      onLeaveRef.current?.(answersRef.current);
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("pagehide", onPageHide);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("pagehide", onPageHide);
+    };
+  }, [guardLeave]);
 
   // ----- Keyboard -----
   useEffect(() => {

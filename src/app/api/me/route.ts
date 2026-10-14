@@ -3,6 +3,7 @@ import { addDays, isAcceptableClientDate } from "@/lib/game/dates";
 import { levelFromXp, liveStreak } from "@/lib/game/progress";
 import { db, type ProgressRow } from "@/lib/server/db";
 import { error, handle, json } from "@/lib/server/http";
+import { finalizeStaleRounds } from "@/lib/server/rounds";
 import { syncUser } from "@/lib/server/user";
 
 /** GET /api/me?date=YYYY-MM-DD — sync the Clerk user, return progress, badges and today's round state. */
@@ -12,6 +13,9 @@ export const GET = handle(async (req: Request) => {
 
   const date = new URL(req.url).searchParams.get("date");
   if (!isAcceptableClientDate(date)) return error(400, "bad_date", "Your device date looks wrong.");
+
+  // Rounds abandoned mid-play (refresh, closed tab) whose answers never arrived count as played with score 0.
+  await finalizeStaleRounds(user.id);
 
   const [progressRes, badgesRes, roundRes, recentRes] = await Promise.all([
     db().from("user_progress").select("*").eq("user_id", user.id).maybeSingle<ProgressRow>(),

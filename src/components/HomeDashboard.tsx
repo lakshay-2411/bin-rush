@@ -22,7 +22,7 @@ function greeting(): string {
 function buddyMessage(me: MeResponse): string {
   const { currentStreak } = me.progress;
   if (me.today.status === "submitted") return "Thanks for today's round! Come back tomorrow for a new set.";
-  if (me.today.status === "started") return "Today's round is done. Warm up with a practice round?";
+  if (me.today.status === "started") return "Your round was interrupted, but today still counts. See you tomorrow!";
   if (me.progress.firstTime) return "Hi! We're the bin buddies. Help us segregate today's waste.";
   if (currentStreak > 0) return `${currentStreak} day${currentStreak > 1 ? "s" : ""} in a row! Play today to keep it going.`;
   return "We missed you! Start a new streak today.";
@@ -53,7 +53,8 @@ export function HomeDashboard() {
     return {
       date,
       label: i === 6 ? "Today" : WEEKDAYS[new Date(`${date}T00:00:00Z`).getUTCDay()],
-      played: me.recentDays.includes(date),
+      // A started round counts too: if it was interrupted, the server saves it shortly after.
+      played: me.recentDays.includes(date) || (i === 6 && round.status !== "none"),
       isToday: i === 6,
     };
   });
@@ -108,6 +109,14 @@ export function HomeDashboard() {
           <PlayIcon size={22} />
           Play today&apos;s round
         </Link>
+      )}
+      {round.status === "started" && (
+        <Card className="flex items-center gap-2 font-bold text-[#0C6B41]">
+          <span className="flex size-8 items-center justify-center rounded-full bg-wet text-white">
+            <CheckIcon size={16} />
+          </span>
+          Played today · interrupted round saved
+        </Card>
       )}
       {round.status === "submitted" && (
         <Card className="flex items-center justify-between">

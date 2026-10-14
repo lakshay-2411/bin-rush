@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Game } from "@/components/Game";
 import { Results } from "@/components/Results";
 import { BinBuddy } from "@/components/BinBuddy";
 import { BossTeaser, Card, primaryButton, RoundIntro, secondaryButton } from "@/components/ui";
-import type { SubmitResponse } from "@/lib/api-types";
+import type { MeResponse, SubmitResponse } from "@/lib/api-types";
 import { api, ApiRequestError } from "@/lib/client/api";
 import { dailySet } from "@/lib/game/dailySet";
 import { localDateString } from "@/lib/game/dates";
@@ -14,6 +14,7 @@ import type { RoundSummary } from "@/lib/game/scoring";
 import type { Answer, DailySet } from "@/lib/game/types";
 
 type Phase =
+  | { name: "checking" }
   | { name: "intro"; error?: string }
   | { name: "starting" }
   | { name: "blocked"; message: string }
@@ -45,8 +46,45 @@ async function submitRound(
   }
 }
 
+/**
+ * Leaving mid-round (refresh, closed tab): send the answers so far as a normal submit.
+ * `keepalive` lets the request finish after the page is gone. If it is lost anyway, the server
+ * finalises the round with score 0 on the player's next visit, so the day still counts.
+ */
+function saveOnLeave(date: string, answers: Answer[]) {
+  fetch("/api/round/submit", {
+    method: "POST",
+    keepalive: true,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date, answers }),
+  }).catch(() => {});
+}
+
+function blockedMessage(today: MeResponse["today"]): string | null {
+  if (today.status === "submitted") return `You've already played today's round and scored ${today.score}. A new set arrives tomorrow!`;
+  if (today.status === "started") {
+    return "Your round was interrupted. Whatever you played is saved, so today still counts. A new set arrives tomorrow!";
+  }
+  return null;
+}
+
 export default function PlayPage() {
-  const [phase, setPhase] = useState<Phase>({ name: "intro" });
+  const [phase, setPhase] = useState<Phase>({ name: "checking" });
+
+  // Check today's status first, so a player who already played (or left mid-round) never sees a Start button.
+  useEffect(() => {
+    let cancelled = false;
+    api<MeResponse>(`/api/me?date=${localDateString()}`)
+      .then((me) => {
+        if (cancelled) return;
+        const message = blockedMessage(me.today);
+        setPhase(message ? { name: "blocked", message } : { name: "intro" });
+      })
+      .catch(() => !cancelled && setPhase({ name: "intro" }));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const start = async () => {
     // The round belongs to the local date it started on, even if it crosses midnight.
@@ -61,10 +99,15 @@ export default function PlayPage() {
     }
   };
 
-
   if (phase.name === "playing") {
     const { date, set } = phase;
-    return <Game set={set} onFinish={(answers, summary) => void submitRound(date, answers, summary, setPhase)} />;
+    return (
+      <Game
+        set={set}
+        onFinish={(answers, summary) => void submitRound(date, answers, summary, setPhase)}
+        onLeave={(answers) => saveOnLeave(date, answers)}
+      />
+    );
   }
 
   if (phase.name === "submitting") {
@@ -124,12 +167,17 @@ export default function PlayPage() {
   return (
     <RoundIntro
       title="Today's round"
-      subtitle="One scored round per day. Everyone gets the same 20 items. Once you start, today's attempt is used, so get comfortable first!"
+      subtitle="One scored round per day. Everyone gets the same 20 items. Once you start, today's attempt is used. If you leave mid-round, whatever you played is saved."
       action={
         <div className="flex flex-col gap-2">
           {phase.name === "intro" && phase.error && <p className="text-sm font-semibold text-[#B4480A]">{phase.error}</p>}
-          <button type="button" className={primaryButton} disabled={phase.name === "starting"} onClick={start}>
-            {phase.name === "starting" ? "Starting…" : "Start today's round"}
+          <button
+            type="button"
+            className={primaryButton}
+            disabled={phase.name === "starting" || phase.name === "checking"}
+            onClick={start}
+          >
+            {phase.name === "starting" ? "Starting…" : phase.name === "checking" ? "Checking…" : "Start today's round"}
           </button>
         </div>
       }

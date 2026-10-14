@@ -67,7 +67,8 @@ You need Node.js and npm, a free [Clerk](https://clerk.com) account and a free [
 
 - **Shared game logic.** `src/lib/game/` is used by both the browser and the server. It holds the item pool (`items.json`), the date-seeded daily set, scoring, answer validation, and the streak, XP, level, badge and star rules.
 - **Fair scoring.** The browser plays the round and sends **only answers and timings**. `POST /api/round/submit` rebuilds the day's set from the date, checks the timings and recomputes the score before saving it.
-- **One round per day.** `POST /api/round/start` claims the day before play begins, using a unique `(user_id, date)` row. A refresh or an abandoned round still uses up the day.
+- **One round per day.** `POST /api/round/start` claims the day before play begins, using a unique `(user_id, date)` row, so a refresh can't be used to restart the round.
+- **Leaving mid-round.** The browser asks before a refresh or close. If the player leaves anyway, the answers so far are sent to the submit endpoint and scored like a normal round. If that request is lost, the server finalises the unfinished round with score 0 the next time the player opens the app (after 90 seconds), so the day still counts for the streak.
 - **Users.** Clerk handles sign-in. The server copies each user's Clerk ID, email and username into the `users` table on `/api/me` and `/api/round/start`. No webhooks are needed.
 - **Access.** `src/proxy.ts` (Next.js 16's name for middleware) sends signed-out visitors away from `/play` and `/profile`. API routes check the session themselves.
 
