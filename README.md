@@ -16,6 +16,20 @@ Everyone gets the same 20 items each day, so the daily leaderboard is fair. Ever
 - **Progress.** Daily streaks, XP and levels (Litter Picker → Zero-Waste Legend), seven badges, and 0 to 3 stars per round.
 - **Learning.** On the results screen, the bin buddies explain every item you got wrong.
 
+## Why it's built this way
+
+- **Modest Android phones and mobile data.** No images or heavy libraries: items are emoji, the bin characters are small inline SVGs, and animations are plain CSS. The day's 20 items are generated on the phone from the date, so a round needs only a few small requests: a status check, one to start and one to submit. A slow connection doesn't affect play. Animations switch off for users who prefer reduced motion.
+- **English as a second language.** Short words and one-line explanations. The bins are told apart by colour, character, label and position, not by text alone. It works with taps or one-thumb swipes.
+- **Rewards worth real money.** Rewards only matter if they can't be gamed. The phone never sends a score, only answers and timings. The server rebuilds the day's items, rejects impossible timings and recalculates the score itself. Each player gets one scored round per day, enforced in the database, so refreshing can't buy a better start. Leaving mid-round still saves whatever was played.
+- **A small idea done well.** I scoped the full idea first, then cut it down and finished the smaller version properly.
+
+## What I left out
+
+- Streak freezes, a weekly leaderboard and cosmetic unlocks
+- Sound and haptics, a shareable result card and friend leaderboards
+- An installable offline app and Hindi or regional-language versions
+- A guided tutorial round; Home shows a short "How to play" card instead
+
 ## Setup
 
 You need Node.js and npm, a free [Clerk](https://clerk.com) account and a free [Supabase](https://supabase.com) project.
@@ -91,3 +105,7 @@ src/
   proxy.ts          Clerk route protection
 supabase/schema.sql database tables
 ```
+
+## Use of AI tools
+
+I used Claude Code throughout: to turn the brief into a scoped plan, write most of the code and tests, explore six visual directions before choosing one, and debug issues found while testing. The product decisions were mine: what to build, what to cut, the game rules and the final design. I reviewed and tested the results on my own phone.
