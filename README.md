@@ -36,7 +36,7 @@ You need Node.js and npm, a free [Clerk](https://clerk.com) account and a free [
 
 1. **Clone the repo**
    ```bash
-   git clone https://github.com/your-username/bin-rush.git
+   git clone https://github.com/lakshay-2411/bin-rush
    cd bin-rush
    ```
 2. **Install dependencies**
